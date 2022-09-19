@@ -2,6 +2,7 @@ package com.cleanup.todoc.ui;
 
 import android.content.DialogInterface;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -17,8 +18,11 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.room.Room;
 
 import com.cleanup.todoc.R;
+import com.cleanup.todoc.database.CleanDatabase;
+import com.cleanup.todoc.database.TaskDao;
 import com.cleanup.todoc.model.Project;
 import com.cleanup.todoc.model.Task;
 
@@ -42,7 +46,7 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
      * List of all current tasks of the application
      */
     @NonNull
-    private final ArrayList<Task> tasks = new ArrayList<>();
+    private  ArrayList<Task> tasks = new ArrayList<>();
 
     /**
      * The adapter which handles the list of tasks
@@ -89,9 +93,28 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
     @NonNull
     private TextView lblNoTasks;
 
+    private static final String TAG = "MyActivity";
+
+
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+
+        CleanDatabase db = Room.databaseBuilder(getApplicationContext(),
+                CleanDatabase.class, "database-clean").build();
+        Task task = new Task(
+                101,
+                1L,
+                "tache 1",
+                new Date().getTime()
+        );
+
+        TaskDao taskDao = db.taskDao();
+        Log.d(TAG, "inserted all avant");
+        taskDao.insertAll(task);
+        Log.d(TAG, "inserted all");
+        // tasks = (ArrayList<Task>) taskDao.getAll();
 
         setContentView(R.layout.activity_main);
 
