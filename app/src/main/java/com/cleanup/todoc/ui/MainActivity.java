@@ -93,6 +93,8 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
     @NonNull
     private TextView lblNoTasks;
 
+    private CleanDatabase db;
+    private TaskDao taskDao;
     private static final String TAG = "MyActivity";
 
 
@@ -100,21 +102,21 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+    db = Room.databaseBuilder(getApplicationContext(),
+                CleanDatabase.class, "database-clean").allowMainThreadQueries().build();
+        taskDao = db.taskDao();
 
-        CleanDatabase db = Room.databaseBuilder(getApplicationContext(),
-                CleanDatabase.class, "database-clean").build();
         Task task = new Task(
-                101,
+                System.currentTimeMillis(),
                 1L,
                 "tache 1",
                 new Date().getTime()
         );
 
-        TaskDao taskDao = db.taskDao();
-        Log.d(TAG, "inserted all avant");
-        taskDao.insertAll(task);
-        Log.d(TAG, "inserted all");
-        // tasks = (ArrayList<Task>) taskDao.getAll();
+        //Log.d(TAG, "inserted all avant");
+        //taskDao.insertAll(task);
+        //Log.d(TAG, "inserted all");
+        //tasks = new (ArrayList<Task>) taskDao.getAll();
 
         setContentView(R.layout.activity_main);
 
@@ -130,6 +132,7 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
                 showAddTaskDialog();
             }
         });
+        updateTasks();
     }
 
     @Override
@@ -189,7 +192,6 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
                 // TODO: Replace this by id of persisted task
                 long id = (long) (Math.random() * 50000);
 
-
                 Task task = new Task(
                         id,
                         taskProject.getId(),
@@ -232,7 +234,9 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
      * @param task the task to be added to the list
      */
     private void addTask(@NonNull Task task) {
-        tasks.add(task);
+        //tasks.add(task);
+        // Insertion des taches en
+        taskDao.insertAll(task);
         updateTasks();
     }
 
@@ -240,6 +244,7 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
      * Updates the list of tasks in the UI
      */
     private void updateTasks() {
+        tasks = new ArrayList<>(taskDao.getAll());
         if (tasks.size() == 0) {
             lblNoTasks.setVisibility(View.VISIBLE);
             listTasks.setVisibility(View.GONE);
