@@ -102,21 +102,25 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-    db = Room.databaseBuilder(getApplicationContext(),
+        /**
+         * Instantiate the database allowing multiple threads from the Main Activity
+         */
+        db = Room.databaseBuilder(getApplicationContext(),
                 CleanDatabase.class, "database-clean").allowMainThreadQueries().build();
+        /**
+         * Instantiate the Dao : the pattern dedicated to the database access
+         */
         taskDao = db.taskDao();
 
+        /**
+         * Creating a dummy task to initialize the database
+         */
         Task task = new Task(
                 System.currentTimeMillis(),
                 1L,
                 "tache 1",
                 new Date().getTime()
         );
-
-        //Log.d(TAG, "inserted all avant");
-        //taskDao.insertAll(task);
-        //Log.d(TAG, "inserted all");
-        //tasks = new (ArrayList<Task>) taskDao.getAll();
 
         setContentView(R.layout.activity_main);
 
@@ -162,7 +166,10 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
 
     @Override
     public void onDeleteTask(Task task) {
-        tasks.remove(task);
+        /** The old version delete the task from the list stored in memory
+         * tasks.remove(task);
+         */
+        taskDao.delete(task);
         updateTasks();
     }
 
@@ -234,8 +241,15 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
      * @param task the task to be added to the list
      */
     private void addTask(@NonNull Task task) {
-        //tasks.add(task);
-        // Insertion des taches en
+
+        /**
+         * The old version inserts a task in the list stored in memory
+         * tasks.add(task);
+         */
+
+        /**
+         * Inserting the task in the database using Dao
+         */
         taskDao.insertAll(task);
         updateTasks();
     }
@@ -244,7 +258,9 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
      * Updates the list of tasks in the UI
      */
     private void updateTasks() {
+        // On commence par recupérer la liste des
         tasks = new ArrayList<>(taskDao.getAll());
+
         if (tasks.size() == 0) {
             lblNoTasks.setVisibility(View.VISIBLE);
             listTasks.setVisibility(View.GONE);
