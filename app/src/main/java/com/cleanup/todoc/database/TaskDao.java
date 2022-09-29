@@ -9,16 +9,21 @@ import com.cleanup.todoc.model.Task;
 
 import java.util.List;
 
+import io.reactivex.Completable;
+import io.reactivex.Single;
+
 @Dao
 public interface TaskDao {
     @Insert
-    void insertAll(Task... tasks);
+    //void insertAll(Task... tasks);
+    public Completable insertAll(Task task);
 
     @Delete
-    void delete(Task task);
+    //void delete(Task task);
+    public Completable delete(List<Task> tasks);
 
     @Query("SELECT * FROM task")
-    List<Task> getAll();
+    public Single<List<Task>> getAll();
 
 
 }

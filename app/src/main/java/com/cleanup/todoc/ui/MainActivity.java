@@ -122,6 +122,8 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
                 new Date().getTime()
         );
 
+        taskDao.insertAll(task);
+
         setContentView(R.layout.activity_main);
 
         listTasks = findViewById(R.id.list_tasks);
@@ -169,7 +171,7 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
         /** The old version delete the task from the list stored in memory
          * tasks.remove(task);
          */
-        taskDao.delete(task);
+        //taskDao.delete(task);
         updateTasks();
     }
 
@@ -250,7 +252,7 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
         /**
          * Inserting the task in the database using Dao
          */
-        taskDao.insertAll(task);
+        //taskDao.insertAll(task);
         updateTasks();
     }
 
@@ -259,8 +261,9 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
      */
     private void updateTasks() {
         // On commence par recupérer la liste des
+        //tasks = new ArrayList<>(taskDao.getAll());
+        //tasks = new ArrayList<>(taskDao.getAll());
         tasks = new ArrayList<>(taskDao.getAll());
-
         if (tasks.size() == 0) {
             lblNoTasks.setVisibility(View.VISIBLE);
             listTasks.setVisibility(View.GONE);
