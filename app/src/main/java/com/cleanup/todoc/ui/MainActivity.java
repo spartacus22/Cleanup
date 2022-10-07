@@ -2,7 +2,6 @@ package com.cleanup.todoc.ui;
 
 import android.content.DialogInterface;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -25,6 +24,7 @@ import com.cleanup.todoc.database.CleanDatabase;
 import com.cleanup.todoc.database.TaskDao;
 import com.cleanup.todoc.model.Project;
 import com.cleanup.todoc.model.Task;
+import com.cleanup.todoc.viewmodel.TaskViewModel;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -37,6 +37,8 @@ import java.util.Date;
  * @author Gaëtan HERFRAY
  */
 public class MainActivity extends AppCompatActivity implements TasksAdapter.DeleteTaskListener {
+
+    private TaskViewModel taskViewModel;
     /**
      * List of all projects available in the application
      */
@@ -92,7 +94,6 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
     @SuppressWarnings("NullableProblems")
     @NonNull
     private TextView lblNoTasks;
-
     private CleanDatabase db;
     private TaskDao taskDao;
     private static final String TAG = "MyActivity";
@@ -171,7 +172,7 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
         /** The old version delete the task from the list stored in memory
          * tasks.remove(task);
          */
-        //taskDao.delete(task);
+        taskDao.delete(task);
         updateTasks();
     }
 
@@ -252,7 +253,7 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
         /**
          * Inserting the task in the database using Dao
          */
-        //taskDao.insertAll(task);
+        taskDao.insertAll(task);
         updateTasks();
     }
 
@@ -264,6 +265,14 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
         //tasks = new ArrayList<>(taskDao.getAll());
         //tasks = new ArrayList<>(taskDao.getAll());
         tasks = new ArrayList<>(taskDao.getAll());
+
+        /* taskDao.getAll().observe(this, new Observer<List<Task>>(){
+            @Override
+            public void onChanged(List<Task> task2s){
+                tasks = new ArrayList<>(task2s);
+            }
+        });*/
+
         if (tasks.size() == 0) {
             lblNoTasks.setVisibility(View.VISIBLE);
             listTasks.setVisibility(View.GONE);
