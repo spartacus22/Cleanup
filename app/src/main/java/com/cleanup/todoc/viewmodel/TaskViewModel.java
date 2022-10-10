@@ -37,4 +37,12 @@ public class TaskViewModel extends ViewModel {
         });
     }
 
+    public void init() {
+        if (this.tasks != null) {
+            return;
+        }
+        tasks = taskDataSource.getAllTasks();
+    }
+
+
 }
