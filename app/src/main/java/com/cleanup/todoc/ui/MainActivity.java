@@ -2,7 +2,6 @@ package com.cleanup.todoc.ui;
 
 import android.content.DialogInterface;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -16,6 +15,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.room.Room;
@@ -23,12 +23,15 @@ import androidx.room.Room;
 import com.cleanup.todoc.R;
 import com.cleanup.todoc.database.CleanDatabase;
 import com.cleanup.todoc.database.TaskDao;
+import com.cleanup.todoc.injections.TaskViewModelFactory;
 import com.cleanup.todoc.model.Project;
 import com.cleanup.todoc.model.Task;
+import com.cleanup.todoc.viewmodel.TaskViewModel;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 
 /**
  * <p>Home activity of the application which is displayed when the user opens the app.</p>
@@ -37,7 +40,9 @@ import java.util.Date;
  * @author Gaëtan HERFRAY
  */
 public class MainActivity extends AppCompatActivity implements TasksAdapter.DeleteTaskListener {
-    /**
+
+    private TaskViewModel taskViewModel;
+     /**
      * List of all projects available in the application
      */
     private final Project[] allProjects = Project.getAllProjects();
@@ -92,7 +97,6 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
     @SuppressWarnings("NullableProblems")
     @NonNull
     private TextView lblNoTasks;
-
     private CleanDatabase db;
     private TaskDao taskDao;
     private static final String TAG = "MyActivity";
@@ -101,38 +105,20 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-    db = Room.databaseBuilder(getApplicationContext(),
-                CleanDatabase.class, "database-clean").allowMainThreadQueries().build();
-        taskDao = db.taskDao();
-
-        Task task = new Task(
-                System.currentTimeMillis(),
-                1L,
-                "tache 1",
-                new Date().getTime()
-        );
-
-        //Log.d(TAG, "inserted all avant");
-        //taskDao.insertAll(task);
-        //Log.d(TAG, "inserted all");
-        //tasks = new (ArrayList<Task>) taskDao.getAll();
-
         setContentView(R.layout.activity_main);
-
         listTasks = findViewById(R.id.list_tasks);
         lblNoTasks = findViewById(R.id.lbl_no_task);
-
         listTasks.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false));
         listTasks.setAdapter(adapter);
-
         findViewById(R.id.fab_add_task).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 showAddTaskDialog();
             }
         });
+        configureViewModel();
         updateTasks();
+        observeTasks();
     }
 
     @Override
@@ -144,7 +130,6 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
-
         if (id == R.id.filter_alphabetical) {
             sortMethod = SortMethod.ALPHABETICAL;
         } else if (id == R.id.filter_alphabetical_inverted) {
@@ -154,16 +139,17 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
         } else if (id == R.id.filter_recent_first) {
             sortMethod = SortMethod.RECENT_FIRST;
         }
-
         updateTasks();
-
         return super.onOptionsItemSelected(item);
     }
 
     @Override
     public void onDeleteTask(Task task) {
-        tasks.remove(task);
-        updateTasks();
+        /* The old version delete the task from the list stored in memory
+         * tasks.remove(task);
+         */
+        taskViewModel.deleteTask(task);
+        //updateTasks();
     }
 
     /**
@@ -219,12 +205,9 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
      */
     private void showAddTaskDialog() {
         final AlertDialog dialog = getAddTaskDialog();
-
         dialog.show();
-
         dialogEditText = dialog.findViewById(R.id.txt_task_name);
         dialogSpinner = dialog.findViewById(R.id.project_spinner);
-
         populateDialogSpinner();
     }
 
@@ -234,17 +217,11 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
      * @param task the task to be added to the list
      */
     private void addTask(@NonNull Task task) {
-        //tasks.add(task);
-        // Insertion des taches en
-        taskDao.insertAll(task);
-        updateTasks();
+        taskViewModel.createTask(task);
     }
 
-    /**
-     * Updates the list of tasks in the UI
-     */
+
     private void updateTasks() {
-        tasks = new ArrayList<>(taskDao.getAll());
         if (tasks.size() == 0) {
             lblNoTasks.setVisibility(View.VISIBLE);
             listTasks.setVisibility(View.GONE);
@@ -264,7 +241,6 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
                 case OLD_FIRST:
                     Collections.sort(tasks, new Task.TaskOldComparator());
                     break;
-
             }
             adapter.updateTasks(tasks);
         }
@@ -278,7 +254,6 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
     @NonNull
     private AlertDialog getAddTaskDialog() {
         final AlertDialog.Builder alertBuilder = new AlertDialog.Builder(this, R.style.Dialog);
-
         alertBuilder.setTitle(R.string.add_task);
         alertBuilder.setView(R.layout.dialog_add_task);
         alertBuilder.setPositiveButton(R.string.add, null);
@@ -290,18 +265,13 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
                 dialog = null;
             }
         });
-
         dialog = alertBuilder.create();
-
         // This instead of listener to positive button in order to avoid automatic dismiss
         dialog.setOnShowListener(new DialogInterface.OnShowListener() {
-
             @Override
             public void onShow(DialogInterface dialogInterface) {
-
                 Button button = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
                 button.setOnClickListener(new View.OnClickListener() {
-
                     @Override
                     public void onClick(View view) {
                         onPositiveButtonClick(dialog);
@@ -309,7 +279,6 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
                 });
             }
         });
-
         return dialog;
     }
 
@@ -324,29 +293,45 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
         }
     }
 
-    /**
-     * List of all possible sort methods for task
-     */
     private enum SortMethod {
-        /**
-         * Sort alphabetical by name
-         */
         ALPHABETICAL,
-        /**
-         * Inverted sort alphabetical by name
-         */
         ALPHABETICAL_INVERTED,
-        /**
-         * Lastly created first
-         */
         RECENT_FIRST,
-        /**
-         * First created first
-         */
         OLD_FIRST,
-        /**
-         * No sort
-         */
         NONE
+    }
+
+    private void configureViewModel() {
+        this.taskViewModel = new ViewModelProvider(this, TaskViewModelFactory.getInstance(this)).get(TaskViewModel.class);
+        this.taskViewModel.init();
+    }
+
+    private void observeTasks() {
+        this.taskViewModel.getTasks().observe(this, this::updateTasks);
+    }
+
+    private void updateTasks(List<Task> tasks) {
+        if (tasks.size() == 0) {
+            lblNoTasks.setVisibility(View.VISIBLE);
+            listTasks.setVisibility(View.GONE);
+        } else {
+            lblNoTasks.setVisibility(View.GONE);
+            listTasks.setVisibility(View.VISIBLE);
+            switch (sortMethod) {
+                case ALPHABETICAL:
+                    Collections.sort(tasks, new Task.TaskAZComparator());
+                    break;
+                case ALPHABETICAL_INVERTED:
+                    Collections.sort(tasks, new Task.TaskZAComparator());
+                    break;
+                case RECENT_FIRST:
+                    Collections.sort(tasks, new Task.TaskRecentComparator());
+                    break;
+                case OLD_FIRST:
+                    Collections.sort(tasks, new Task.TaskOldComparator());
+                    break;
+            }
+            adapter.updateTasks(tasks);
+        }
     }
 }
