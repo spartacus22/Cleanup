@@ -117,7 +117,6 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
             }
         });
         configureViewModel();
-        updateTasks();
         observeTasks();
     }
 
@@ -131,15 +130,18 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         if (id == R.id.filter_alphabetical) {
+            observeTasksSortedTasks();
             sortMethod = SortMethod.ALPHABETICAL;
         } else if (id == R.id.filter_alphabetical_inverted) {
+            observeTasksSortedTasksByNameDesc();
             sortMethod = SortMethod.ALPHABETICAL_INVERTED;
         } else if (id == R.id.filter_oldest_first) {
+            observeTasksSortedTasksByDate();
             sortMethod = SortMethod.OLD_FIRST;
         } else if (id == R.id.filter_recent_first) {
+            observeTasksSortedTasksByDateDesc();
             sortMethod = SortMethod.RECENT_FIRST;
         }
-        updateTasks();
         return super.onOptionsItemSelected(item);
     }
 
@@ -186,7 +188,6 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
                 );
 
                 addTask(task);
-
                 dialogInterface.dismiss();
             }
             // If name has been set, but project has not been set (this should never occur)
@@ -220,31 +221,6 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
         taskViewModel.createTask(task);
     }
 
-
-    private void updateTasks() {
-        if (tasks.size() == 0) {
-            lblNoTasks.setVisibility(View.VISIBLE);
-            listTasks.setVisibility(View.GONE);
-        } else {
-            lblNoTasks.setVisibility(View.GONE);
-            listTasks.setVisibility(View.VISIBLE);
-            switch (sortMethod) {
-                case ALPHABETICAL:
-                    Collections.sort(tasks, new Task.TaskAZComparator());
-                    break;
-                case ALPHABETICAL_INVERTED:
-                    Collections.sort(tasks, new Task.TaskZAComparator());
-                    break;
-                case RECENT_FIRST:
-                    Collections.sort(tasks, new Task.TaskRecentComparator());
-                    break;
-                case OLD_FIRST:
-                    Collections.sort(tasks, new Task.TaskOldComparator());
-                    break;
-            }
-            adapter.updateTasks(tasks);
-        }
-    }
 
     /**
      * Returns the dialog allowing the user to create a new task.
@@ -308,6 +284,22 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
 
     private void observeTasks() {
         this.taskViewModel.getTasks().observe(this, this::updateTasks);
+    }
+
+    private void observeTasksSortedTasks() {
+        this.taskViewModel.getSortedTasks().observe(this, this::updateTasks);
+    }
+
+    private void observeTasksSortedTasksByNameDesc() {
+        this.taskViewModel.getSortedTasksByNameDesc().observe(this, this::updateTasks);
+    }
+
+    private void observeTasksSortedTasksByDate() {
+        this.taskViewModel.getSortedTasksByDate().observe(this, this::updateTasks);
+    }
+
+    private void observeTasksSortedTasksByDateDesc() {
+        this.taskViewModel.getSortedTasksByDateDesc().observe(this, this::updateTasks);
     }
 
     private void updateTasks(List<Task> tasks) {

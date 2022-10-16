@@ -19,7 +19,17 @@ public interface TaskDao {
     void delete(Task task);
 
     @Query("SELECT * FROM task")
-    //public List<Task> getAll();
-    public LiveData<List<Task>> getAll();
+    LiveData<List<Task>> getAll();
 
+    @Query("SELECT * FROM task ORDER BY name ")
+    LiveData<List<Task>> getAllTasksSortedByName();
+
+    @Query("SELECT * FROM task ORDER BY name DESC ")
+    LiveData<List<Task>> getAllTasksSortedByNameDesc();
+
+    @Query("SELECT * FROM task ORDER BY creationTimestamp")
+    LiveData<List<Task>> getAllTasksSortedByDate();
+
+    @Query("SELECT * FROM task ORDER BY creationTimestamp DESC")
+    LiveData<List<Task>> getAllTasksSortedByDateDesc();
 }

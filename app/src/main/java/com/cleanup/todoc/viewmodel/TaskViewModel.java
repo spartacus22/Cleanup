@@ -25,6 +25,23 @@ public class TaskViewModel extends ViewModel {
         return taskDataSource.getAllTasks();
     }
 
+    public LiveData<List<Task>> getSortedTasks() {
+        return taskDataSource.getAllTasksSortedByName();
+    }
+
+    public LiveData<List<Task>> getSortedTasksByNameDesc() {
+        return taskDataSource.getAllTasksSortedByNameDesc();
+    }
+
+    public LiveData<List<Task>> getSortedTasksByDate() {
+        return taskDataSource.getAllTasksSortedByDate();
+    }
+
+    public LiveData<List<Task>> getSortedTasksByDateDesc() {
+        return taskDataSource.getAllTasksSortedByDateDesc();
+    }
+
+
     public void createTask(Task task){
         executor.execute(() -> {
             taskDataSource.createTask(task);
